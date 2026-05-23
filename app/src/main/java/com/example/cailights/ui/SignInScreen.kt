@@ -1,6 +1,7 @@
 package com.example.cailights.ui
 
 import com.example.cailights.R
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,7 +43,10 @@ enum class SignInState {
 }
 
 @Composable
-fun SignInScreen(modifier: Modifier = Modifier) {
+fun SignInScreen(
+    modifier: Modifier = Modifier,
+    onSignUpClick: () -> Unit = {}
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var currentState by remember { mutableStateOf(SignInState.EMAIL) }
@@ -201,7 +205,8 @@ fun SignInScreen(modifier: Modifier = Modifier) {
         Text(
             text = "Don't have an account? Sign Up",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable { onSignUpClick() }
         )
     }
 }
