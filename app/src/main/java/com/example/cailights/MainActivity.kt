@@ -14,9 +14,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.cailights.ui.SignInScreen
 import com.example.cailights.ui.SignUpScreen
+import com.example.cailights.ui.SplashScreen
 import com.example.cailights.ui.theme.CailightsTheme
 
 enum class Screen {
+    SPLASH,
     SIGN_IN,
     SIGN_UP
 }
@@ -27,18 +29,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CailightsTheme {
-                var currentScreen by remember { mutableStateOf(Screen.SIGN_IN) }
+                var currentScreen by remember { mutableStateOf(Screen.SPLASH) }
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     when (currentScreen) {
+                        Screen.SPLASH -> SplashScreen(
+                            onTimeout = { currentScreen = Screen.SIGN_IN },
+                        )
                         Screen.SIGN_IN -> SignInScreen(
-                            onSignUpClick = { currentScreen = Screen.SIGN_UP }
+                            onSignUpClick = { currentScreen = Screen.SIGN_UP },
                         )
                         Screen.SIGN_UP -> SignUpScreen(
-                            onSignInClick = { currentScreen = Screen.SIGN_IN }
+                            onSignInClick = { currentScreen = Screen.SIGN_IN },
                         )
                     }
                 }
