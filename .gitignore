@@ -1,15 +1,26 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# --- Root level ---
+.gradle/
+.idea/
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
 local.properties
+/build/
+
+# --- Android specific (monorepo paths) ---
+/android/app/build/
+/android/app/build.gradle.kts.orig
+/android/app/libs/
+/android/app/src/main/assets/
+/android/.gradle/
+/android/.idea/
+
+# --- Backend specific (future proofing) ---
+/backend/node_modules/
+/backend/dist/
+/backend/target/
+
+# --- IDE & OS ---
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/deploymentTargetSelector.xml

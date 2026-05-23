@@ -23,4 +23,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "cailights"
-include(":app")
+include(":android:app")
