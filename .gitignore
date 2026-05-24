@@ -13,6 +13,16 @@ local.properties
 /android/.gradle/
 /android/.idea/
 
+/android/android-compose-ui/
+/android/android-data-layer/
+/android/android-di-koin/
+/android/android-error-handling/
+/android/android-module-structure/
+/android/android-navigation/
+/android/android-presentation-mvi/
+/android/android-testing/
+/android/GEMINI.md
+
 # --- Backend specific (future proofing) ---
 /backend/node_modules/
 /backend/dist/

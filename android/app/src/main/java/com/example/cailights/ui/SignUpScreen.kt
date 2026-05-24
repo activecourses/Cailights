@@ -22,48 +22,52 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cailights.ui.theme.CailightsTheme
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.Color
+import org.koin.androidx.compose.koinViewModel
 
-enum class SignUpState {
-    FORM,
-    VERIFICATION
+@Composable
+fun SignUpRoot(
+    onSignInClick: () -> Unit,
+    viewModel: SignUpViewModel = koinViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            SignUpEvent.NavigateToSignIn -> onSignInClick()
+            is SignUpEvent.ShowError -> { /* TODO: Show snackbar */ }
+        }
+    }
+
+    SignUpScreen(
+        state = state,
+        onAction = viewModel::onAction
+    )
 }
 
 @Composable
 fun SignUpScreen(
-    modifier: Modifier = Modifier,
-    onSignInClick: () -> Unit = {}
+    state: SignUpState,
+    onAction: (SignUpAction) -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var verificationCode by remember { mutableStateOf("") }
-    var currentState by remember { mutableStateOf(SignUpState.FORM) }
-
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-    var confirmPasswordError by remember { mutableStateOf<String?>(null) }
-
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        val title = if (currentState == SignUpState.FORM) "Join us" else "Verify email"
+        val title = if (state.signUpStep == SignUpStep.FORM) "Join us" else "Verify email"
         
         Text(
             text = title,
@@ -74,7 +78,7 @@ fun SignUpScreen(
                 .align(Alignment.Start)
         )
 
-        if (currentState == SignUpState.FORM) {
+        if (state.signUpStep == SignUpStep.FORM) {
             OutlinedButton(
                 onClick = { /* TODO: Implement Google Sign Up logic */ },
                 modifier = Modifier.fillMaxWidth(),
@@ -111,32 +115,26 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = email,
-                onValueChange = { 
-                    email = it
-                    emailError = null 
-                },
+                value = state.email,
+                onValueChange = { onAction(SignUpAction.OnEmailChange(it)) },
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = emailError != null,
-                supportingText = { emailError?.let { Text(it) } },
+                isError = state.emailError != null,
+                supportingText = { state.emailError?.asString()?.let { Text(it) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = password,
-                onValueChange = { 
-                    password = it
-                    passwordError = null
-                },
+                value = state.password,
+                onValueChange = { onAction(SignUpAction.OnPasswordChange(it)) },
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = passwordError != null,
-                supportingText = { passwordError?.let { Text(it) } },
+                isError = state.passwordError != null,
+                supportingText = { state.passwordError?.asString()?.let { Text(it) } },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
@@ -144,16 +142,13 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { 
-                    confirmPassword = it
-                    confirmPasswordError = null
-                },
+                value = state.confirmPassword,
+                onValueChange = { onAction(SignUpAction.OnConfirmPasswordChange(it)) },
                 label = { Text("Confirm Password") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                isError = confirmPasswordError != null,
-                supportingText = { confirmPasswordError?.let { Text(it) } },
+                isError = state.confirmPasswordError != null,
+                supportingText = { state.confirmPasswordError?.asString()?.let { Text(it) } },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
@@ -161,28 +156,7 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = {
-                    var hasError = false
-                    if (email.isBlank()) {
-                        emailError = "Email is required"
-                        hasError = true
-                    }
-                    if (password.isBlank()) {
-                        passwordError = "Password is required"
-                        hasError = true
-                    }
-                    if (confirmPassword != password) {
-                        confirmPasswordError = "Passwords do not match"
-                        hasError = true
-                    } else if (confirmPassword.isBlank()) {
-                        confirmPasswordError = "Please confirm your password"
-                        hasError = true
-                    }
-
-                    if (!hasError) {
-                        currentState = SignUpState.VERIFICATION
-                    }
-                },
+                onClick = { onAction(SignUpAction.OnCreateAccountClick) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Create account")
@@ -194,18 +168,18 @@ fun SignUpScreen(
                 text = "Already have an account? Sign In",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { onSignInClick() }
+                modifier = Modifier.clickable { onAction(SignUpAction.OnSignInClick) }
             )
         } else {
             Text(
-                text = "We've sent a code to $email",
+                text = "We've sent a code to ${state.email}",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 16.dp).align(Alignment.Start)
             )
 
             OutlinedTextField(
-                value = verificationCode,
-                onValueChange = { verificationCode = it },
+                value = state.verificationCode,
+                onValueChange = { onAction(SignUpAction.OnVerificationCodeChange(it)) },
                 label = { Text("Verification Code") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -215,7 +189,7 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { /* TODO: Implement verification logic */ },
+                onClick = { onAction(SignUpAction.OnVerifyClick) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Verify")
@@ -224,7 +198,7 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
-                onClick = { currentState = SignUpState.FORM },
+                onClick = { onAction(SignUpAction.OnBackClick) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Back")
@@ -235,8 +209,11 @@ fun SignUpScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun SignUpScreenPreview() {
+private fun SignUpScreenPreview() {
     CailightsTheme {
-        SignUpScreen()
+        SignUpScreen(
+            state = SignUpState(),
+            onAction = {}
+        )
     }
 }

@@ -15,8 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.cailights.R
@@ -38,7 +37,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
             durationMillis = 600,
             easing = FastOutSlowInEasing
         ),
-        label = "scale"
+        label = "scale",
     )
 
     LaunchedEffect(key1 = true) {
@@ -56,8 +55,11 @@ fun SplashScreen(onTimeout: () -> Unit) {
             contentDescription = "Logo",
             modifier = Modifier
                 .size(200.dp)
-                .scale(scale)
-                .alpha(alpha)
+                .graphicsLayer {
+                    this.alpha = alpha
+                    this.scaleX = scale
+                    this.scaleY = scale
+                }
         )
     }
 }

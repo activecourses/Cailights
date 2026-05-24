@@ -12,8 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.example.cailights.ui.SignInScreen
-import com.example.cailights.ui.SignUpScreen
+import com.example.cailights.ui.SignInRoot
+import com.example.cailights.ui.SignUpRoot
 import com.example.cailights.ui.SplashScreen
 import com.example.cailights.ui.theme.CailightsTheme
 
@@ -39,10 +39,10 @@ class MainActivity : ComponentActivity() {
                         Screen.SPLASH -> SplashScreen(
                             onTimeout = { currentScreen = Screen.SIGN_IN },
                         )
-                        Screen.SIGN_IN -> SignInScreen(
+                        Screen.SIGN_IN -> SignInRoot(
                             onSignUpClick = { currentScreen = Screen.SIGN_UP },
                         )
-                        Screen.SIGN_UP -> SignUpScreen(
+                        Screen.SIGN_UP -> SignUpRoot(
                             onSignInClick = { currentScreen = Screen.SIGN_IN },
                         )
                     }

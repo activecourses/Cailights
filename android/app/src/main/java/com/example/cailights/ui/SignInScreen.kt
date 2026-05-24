@@ -22,46 +22,55 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cailights.ui.theme.CailightsTheme
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.Color
+import org.koin.androidx.compose.koinViewModel
 
-enum class SignInState {
-    EMAIL,
-    PASSWORD,
-    FORGOT_PASSWORD
+@Composable
+fun SignInRoot(
+    onSignUpClick: () -> Unit,
+    viewModel: SignInViewModel = koinViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            SignInEvent.NavigateToSignUp -> onSignUpClick()
+            is SignInEvent.ShowError -> { /* TODO: Show snackbar */ }
+        }
+    }
+
+    SignInScreen(
+        state = state,
+        onAction = viewModel::onAction
+    )
 }
 
 @Composable
 fun SignInScreen(
-    modifier: Modifier = Modifier,
-    onSignUpClick: () -> Unit = {}
+    state: SignInState,
+    onAction: (SignInAction) -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var currentState by remember { mutableStateOf(SignInState.EMAIL) }
-
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        val title = when (currentState) {
-            SignInState.EMAIL -> "Sign in"
-            SignInState.PASSWORD -> "Enter password"
-            SignInState.FORGOT_PASSWORD -> "Forgot password"
+        val title = when (state.signInStep) {
+            SignInStep.EMAIL -> "Sign in"
+            SignInStep.PASSWORD -> "Enter password"
+            SignInStep.FORGOT_PASSWORD -> "Forgot password"
         }
 
         Text(
@@ -73,7 +82,7 @@ fun SignInScreen(
                 .align(Alignment.Start)
         )
 
-        if (currentState != SignInState.FORGOT_PASSWORD) {
+        if (state.signInStep != SignInStep.FORGOT_PASSWORD) {
             OutlinedButton(
                 onClick = { /* TODO: Implement Google Sign In logic */ },
                 modifier = Modifier.fillMaxWidth(),
@@ -110,11 +119,11 @@ fun SignInScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        when (currentState) {
-            SignInState.EMAIL -> {
+        when (state.signInStep) {
+            SignInStep.EMAIL -> {
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = state.email,
+                    onValueChange = { onAction(SignInAction.OnEmailChange(it)) },
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -124,7 +133,7 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { currentState = SignInState.PASSWORD },
+                    onClick = { onAction(SignInAction.OnNextClick) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Next")
@@ -133,17 +142,17 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
-                    onClick = { currentState = SignInState.FORGOT_PASSWORD },
+                    onClick = { onAction(SignInAction.OnForgotPasswordClick) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Forget Your Password?")
                 }
             }
 
-            SignInState.PASSWORD -> {
+            SignInStep.PASSWORD -> {
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = state.password,
+                    onValueChange = { onAction(SignInAction.OnPasswordChange(it)) },
                     label = { Text("Password") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -154,7 +163,7 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { /* TODO: Implement Sign In logic */ },
+                    onClick = { onAction(SignInAction.OnSignInClick) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Sign In")
@@ -163,17 +172,17 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
-                    onClick = { currentState = SignInState.EMAIL },
+                    onClick = { onAction(SignInAction.OnBackClick) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Back")
                 }
             }
 
-            SignInState.FORGOT_PASSWORD -> {
+            SignInStep.FORGOT_PASSWORD -> {
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = state.email,
+                    onValueChange = { onAction(SignInAction.OnEmailChange(it)) },
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -183,7 +192,7 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { /* TODO: Implement send verification logic */ },
+                    onClick = { onAction(SignInAction.OnSendVerificationCodeClick) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Send verification code")
@@ -192,7 +201,7 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
-                    onClick = { currentState = SignInState.EMAIL },
+                    onClick = { onAction(SignInAction.OnBackClick) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Back to Sign In")
@@ -206,15 +215,18 @@ fun SignInScreen(
             text = "Don't have an account? Sign Up",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable { onSignUpClick() }
+            modifier = Modifier.clickable { onAction(SignInAction.OnSignUpClick) }
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun SignInScreenPreview() {
+private fun SignInScreenPreview() {
     CailightsTheme {
-        SignInScreen()
+        SignInScreen(
+            state = SignInState(),
+            onAction = {}
+        )
     }
 }
