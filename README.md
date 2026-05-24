@@ -1,31 +1,31 @@
 # Cailights
 
-Connecting candidates to recruiters
+Connecting candidates to recruiters through a modern, mobile-first experience.
 
 ## Features
 
-1. [x] Splash Screen
-2. [x] simple login/sign up pages
+- **Animated Splash Screen**: Snappy entrance with persistent session checking.
+- **Authentication**: Multi-step Sign In and Sign Up with real-time validation.
+- **Session Persistence**: Stay logged in even after closing the app.
+- **Home Feed**: Dynamic feed displaying posts from multiple simulated users.
+- **MVI Architecture**: Robust state management following the project's Skills Index.
 
 ## Tech Stack
 
-- **Language**: [Kotlin](https://kotlinlang.org/)
-- **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose)
-- **Design System**: [Material Design 3](https://m3.material.io/)
-- **Build System**: Gradle (Kotlin DSL)
-- **Minimum SDK**: 24 (Android 7.0)
-- **Target SDK**: 36
+- **Kotlin** & **Jetpack Compose** (Material 3)
+- **Koin** (Dependency Injection)
+- **Coroutines & Flow**
+- **Modern Time APIs** (ZonedDateTime with API desugaring)
 
 ## Project Structure
 
 ```text
 app/src/main/java/com/example/cailights/
-├── ui/
-│   ├── theme/          # Material 3 Theme configurations
-│   ├── SignInScreen.kt # Multi-state Sign In UI and logic
-│   ├── SignUpScreen.kt # Registration form with validation and verification
-│   └── SplashScreen.kt # Animated entry screen
-└── MainActivity.kt      # Main entry point managing navigation state
+├── ui/         # MVI Screens, ViewModels, and Theme
+├── domain/     # Business logic, Repository interfaces, and Models
+├── data/       # Fake Repository implementations and Auth storage
+├── di/         # Koin Dependency Injection modules
+└── MainActivity.kt # Navigation orchestration
 ```
 
 ## Getting Started
