@@ -14,6 +14,8 @@ data class SignUpState(
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
+    val isPasswordVisible: Boolean = false,
+    val isConfirmPasswordVisible: Boolean = false,
     val verificationCode: String = "",
     val signUpStep: SignUpStep = SignUpStep.FORM,
     val isLoading: Boolean = false,
@@ -31,6 +33,8 @@ sealed interface SignUpAction {
     data class OnEmailChange(val email: String) : SignUpAction
     data class OnPasswordChange(val password: String) : SignUpAction
     data class OnConfirmPasswordChange(val confirmPassword: String) : SignUpAction
+    data object OnTogglePasswordVisibility : SignUpAction
+    data object OnToggleConfirmPasswordVisibility : SignUpAction
     data class OnVerificationCodeChange(val code: String) : SignUpAction
     data object OnCreateAccountClick : SignUpAction
     data object OnVerifyClick : SignUpAction
@@ -64,6 +68,12 @@ class SignUpViewModel(
             }
             is SignUpAction.OnConfirmPasswordChange -> {
                 _state.update { it.copy(confirmPassword = action.confirmPassword, confirmPasswordError = null) }
+            }
+            SignUpAction.OnTogglePasswordVisibility -> {
+                _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
+            }
+            SignUpAction.OnToggleConfirmPasswordVisibility -> {
+                _state.update { it.copy(isConfirmPasswordVisible = !it.isConfirmPasswordVisible) }
             }
             is SignUpAction.OnVerificationCodeChange -> {
                 _state.update { it.copy(verificationCode = action.code) }

@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -36,7 +37,7 @@ fun FeedRoot(
     val state by viewModel.state.collectAsStateWithLifecycle()
     
     FeedScreen(
-        state = state,
+        stateProvider = { state },
         onAction = viewModel::onAction
     )
 }
@@ -44,17 +45,21 @@ fun FeedRoot(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
-    state: FeedState,
+    stateProvider: () -> FeedState,
     onAction: (FeedAction) -> Unit
 ) {
+    val state = stateProvider()
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Feed", fontWeight = FontWeight.Bold) })
         }
     ) { padding ->
+        val pullToRefreshState = rememberPullToRefreshState()
+        
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { onAction(FeedAction.OnRefresh) },
+            state = pullToRefreshState,
             modifier = Modifier.padding(padding).fillMaxSize()
         ) {
             if (state.posts.isEmpty() && !state.isLoading) {
@@ -105,7 +110,7 @@ fun PostItem(post: Post) {
 private fun FeedScreenPreview() {
     CailightsTheme {
         FeedScreen(
-            state = FeedState(),
+            stateProvider = { FeedState() },
             onAction = {}
         )
     }

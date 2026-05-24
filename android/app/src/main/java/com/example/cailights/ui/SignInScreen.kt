@@ -12,11 +12,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -30,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,16 +59,17 @@ fun SignInRoot(
     }
 
     SignInScreen(
-        state = state,
+        stateProvider = { state },
         onAction = viewModel::onAction
     )
 }
 
 @Composable
 fun SignInScreen(
-    state: SignInState,
+    stateProvider: () -> SignInState,
     onAction: (SignInAction) -> Unit
 ) {
+    val state = stateProvider()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -172,7 +178,15 @@ fun SignInScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !state.isLoading,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { onAction(SignInAction.OnTogglePasswordVisibility) }) {
+                            Icon(
+                                imageVector = if (state.isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (state.isPasswordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                 )
 
@@ -262,7 +276,7 @@ fun SignInScreen(
 private fun SignInScreenPreview() {
     CailightsTheme {
         SignInScreen(
-            state = SignInState(),
+            stateProvider = { SignInState() },
             onAction = {}
         )
     }

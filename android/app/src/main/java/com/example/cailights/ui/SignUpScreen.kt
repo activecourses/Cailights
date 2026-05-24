@@ -12,11 +12,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -30,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,16 +58,17 @@ fun SignUpRoot(
     }
 
     SignUpScreen(
-        state = state,
+        stateProvider = { state },
         onAction = viewModel::onAction
     )
 }
 
 @Composable
 fun SignUpScreen(
-    state: SignUpState,
+    stateProvider: () -> SignUpState,
     onAction: (SignUpAction) -> Unit
 ) {
+    val state = stateProvider()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -141,7 +147,15 @@ fun SignUpScreen(
                 enabled = !state.isLoading,
                 isError = state.passwordError != null,
                 supportingText = { state.passwordError?.asString()?.let { Text(it) } },
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { onAction(SignUpAction.OnTogglePasswordVisibility) }) {
+                        Icon(
+                            imageVector = if (state.isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (state.isPasswordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
@@ -156,7 +170,15 @@ fun SignUpScreen(
                 enabled = !state.isLoading,
                 isError = state.confirmPasswordError != null,
                 supportingText = { state.confirmPasswordError?.asString()?.let { Text(it) } },
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (state.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { onAction(SignUpAction.OnToggleConfirmPasswordVisibility) }) {
+                        Icon(
+                            imageVector = if (state.isConfirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (state.isConfirmPasswordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
@@ -239,7 +261,7 @@ fun SignUpScreen(
 private fun SignUpScreenPreview() {
     CailightsTheme {
         SignUpScreen(
-            state = SignUpState(),
+            stateProvider = { SignUpState() },
             onAction = {}
         )
     }

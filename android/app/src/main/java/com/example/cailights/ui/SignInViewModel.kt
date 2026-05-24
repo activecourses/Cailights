@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 data class SignInState(
     val email: String = "",
     val password: String = "",
+    val isPasswordVisible: Boolean = false,
     val signInStep: SignInStep = SignInStep.EMAIL,
     val isLoading: Boolean = false
 )
@@ -26,6 +27,7 @@ enum class SignInStep {
 sealed interface SignInAction {
     data class OnEmailChange(val email: String) : SignInAction
     data class OnPasswordChange(val password: String) : SignInAction
+    data object OnTogglePasswordVisibility : SignInAction
     data object OnNextClick : SignInAction
     data object OnForgotPasswordClick : SignInAction
     data object OnBackClick : SignInAction
@@ -57,6 +59,9 @@ class SignInViewModel(
             }
             is SignInAction.OnPasswordChange -> {
                 _state.update { it.copy(password = action.password) }
+            }
+            SignInAction.OnTogglePasswordVisibility -> {
+                _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             }
             SignInAction.OnNextClick -> {
                 _state.update { it.copy(signInStep = SignInStep.PASSWORD) }
