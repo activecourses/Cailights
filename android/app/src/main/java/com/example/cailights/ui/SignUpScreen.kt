@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SignUpRoot(
     onSignInClick: () -> Unit,
+    onSignUpSuccess: () -> Unit,
     viewModel: SignUpViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -45,7 +47,8 @@ fun SignUpRoot(
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             SignUpEvent.NavigateToSignIn -> onSignInClick()
-            is SignUpEvent.ShowError -> { /* TODO: Show snackbar */ }
+            SignUpEvent.SignUpSuccess -> onSignUpSuccess()
+            is SignUpEvent.ShowError -> { /* TODO: Show snackbar or Toast */ }
         }
     }
 
@@ -82,6 +85,7 @@ fun SignUpScreen(
             OutlinedButton(
                 onClick = { /* TODO: Implement Google Sign Up logic */ },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading,
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -120,6 +124,7 @@ fun SignUpScreen(
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                enabled = !state.isLoading,
                 isError = state.emailError != null,
                 supportingText = { state.emailError?.asString()?.let { Text(it) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
@@ -133,6 +138,7 @@ fun SignUpScreen(
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                enabled = !state.isLoading,
                 isError = state.passwordError != null,
                 supportingText = { state.passwordError?.asString()?.let { Text(it) } },
                 visualTransformation = PasswordVisualTransformation(),
@@ -147,6 +153,7 @@ fun SignUpScreen(
                 label = { Text("Confirm Password") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                enabled = !state.isLoading,
                 isError = state.confirmPasswordError != null,
                 supportingText = { state.confirmPasswordError?.asString()?.let { Text(it) } },
                 visualTransformation = PasswordVisualTransformation(),
@@ -157,9 +164,18 @@ fun SignUpScreen(
 
             Button(
                 onClick = { onAction(SignUpAction.OnCreateAccountClick) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
             ) {
-                Text("Create account")
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Create account")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -168,7 +184,7 @@ fun SignUpScreen(
                 text = "Already have an account? Sign In",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { onAction(SignUpAction.OnSignInClick) }
+                modifier = Modifier.clickable(enabled = !state.isLoading) { onAction(SignUpAction.OnSignInClick) }
             )
         } else {
             Text(
@@ -183,6 +199,7 @@ fun SignUpScreen(
                 label = { Text("Verification Code") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                enabled = !state.isLoading,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
@@ -190,16 +207,26 @@ fun SignUpScreen(
 
             Button(
                 onClick = { onAction(SignUpAction.OnVerifyClick) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
             ) {
-                Text("Verify")
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Verify")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
                 onClick = { onAction(SignUpAction.OnBackClick) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
             ) {
                 Text("Back")
             }

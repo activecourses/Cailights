@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SignInRoot(
     onSignUpClick: () -> Unit,
+    onSignInSuccess: () -> Unit,
     viewModel: SignInViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -45,7 +47,9 @@ fun SignInRoot(
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             SignInEvent.NavigateToSignUp -> onSignUpClick()
-            is SignInEvent.ShowError -> { /* TODO: Show snackbar */ }
+            SignInEvent.SignInSuccess -> onSignInSuccess()
+            is SignInEvent.ShowError -> { /* TODO: Show snackbar or Toast */ }
+            else -> Unit
         }
     }
 
@@ -127,6 +131,7 @@ fun SignInScreen(
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    enabled = !state.isLoading,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
 
@@ -134,16 +139,26 @@ fun SignInScreen(
 
                 Button(
                     onClick = { onAction(SignInAction.OnNextClick) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !state.isLoading
                 ) {
-                    Text("Next")
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Next")
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
                     onClick = { onAction(SignInAction.OnForgotPasswordClick) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !state.isLoading
                 ) {
                     Text("Forget Your Password?")
                 }
@@ -156,6 +171,7 @@ fun SignInScreen(
                     label = { Text("Password") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    enabled = !state.isLoading,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                 )
@@ -164,16 +180,26 @@ fun SignInScreen(
 
                 Button(
                     onClick = { onAction(SignInAction.OnSignInClick) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !state.isLoading
                 ) {
-                    Text("Sign In")
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Sign In")
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
                     onClick = { onAction(SignInAction.OnBackClick) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !state.isLoading
                 ) {
                     Text("Back")
                 }
@@ -186,6 +212,7 @@ fun SignInScreen(
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    enabled = !state.isLoading,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
 
@@ -193,16 +220,26 @@ fun SignInScreen(
 
                 Button(
                     onClick = { onAction(SignInAction.OnSendVerificationCodeClick) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !state.isLoading
                 ) {
-                    Text("Send verification code")
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Send verification code")
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
                     onClick = { onAction(SignInAction.OnBackClick) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !state.isLoading
                 ) {
                     Text("Back to Sign In")
                 }

@@ -1,16 +1,20 @@
 package com.example.cailights.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.cailights.domain.auth.AuthRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class SignInState(
     val email: String = "",
     val password: String = "",
-    val signInStep: SignInStep = SignInStep.EMAIL
+    val signInStep: SignInStep = SignInStep.EMAIL,
+    val isLoading: Boolean = false
 )
 
 enum class SignInStep {
@@ -32,10 +36,13 @@ sealed interface SignInAction {
 
 sealed interface SignInEvent {
     data object NavigateToSignUp : SignInEvent
+    data object SignInSuccess : SignInEvent
     data class ShowError(val message: UiText) : SignInEvent
 }
 
-class SignInViewModel : ViewModel() {
+class SignInViewModel(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val _state = MutableStateFlow(SignInState())
     val state = _state.asStateFlow()
@@ -68,14 +75,48 @@ class SignInViewModel : ViewModel() {
                 }
             }
             SignInAction.OnSignInClick -> {
-                // TODO: Implement sign in logic
+                signIn()
             }
             SignInAction.OnSendVerificationCodeClick -> {
-                // TODO: Implement send verification code logic
+                sendVerificationCode()
             }
             SignInAction.OnSignUpClick -> {
                 _events.trySend(SignInEvent.NavigateToSignUp)
             }
+        }
+    }
+
+    private fun signIn() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            authRepository.signIn(_state.value.email, _state.value.password)
+                .onSuccess {
+                    _state.update { it.copy(isLoading = false) }
+                    _events.send(SignInEvent.SignInSuccess)
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(isLoading = false) }
+                    val message = when(error) {
+                        AuthError.InvalidCredentials -> UiText.DynamicString("Invalid email or password")
+                        else -> UiText.DynamicString("An unknown error occurred")
+                    }
+                    _events.send(SignInEvent.ShowError(message))
+                }
+        }
+    }
+
+    private fun sendVerificationCode() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            authRepository.sendVerificationCode(_state.value.email)
+                .onSuccess {
+                    _state.update { it.copy(isLoading = false) }
+                    _events.send(SignInEvent.ShowError(UiText.DynamicString("Verification code sent!")))
+                }
+                .onFailure {
+                    _state.update { it.copy(isLoading = false) }
+                    _events.send(SignInEvent.ShowError(UiText.DynamicString("Failed to send code")))
+                }
         }
     }
 }

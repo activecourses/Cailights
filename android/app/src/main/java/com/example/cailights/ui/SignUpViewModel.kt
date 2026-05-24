@@ -1,11 +1,14 @@
 package com.example.cailights.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.cailights.domain.auth.AuthRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class SignUpState(
     val email: String = "",
@@ -13,6 +16,7 @@ data class SignUpState(
     val confirmPassword: String = "",
     val verificationCode: String = "",
     val signUpStep: SignUpStep = SignUpStep.FORM,
+    val isLoading: Boolean = false,
     val emailError: UiText? = null,
     val passwordError: UiText? = null,
     val confirmPasswordError: UiText? = null
@@ -36,10 +40,13 @@ sealed interface SignUpAction {
 
 sealed interface SignUpEvent {
     data object NavigateToSignIn : SignUpEvent
+    data object SignUpSuccess : SignUpEvent
     data class ShowError(val message: UiText) : SignUpEvent
 }
 
-class SignUpViewModel : ViewModel() {
+class SignUpViewModel(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val _state = MutableStateFlow(SignUpState())
     val state = _state.asStateFlow()
@@ -65,7 +72,7 @@ class SignUpViewModel : ViewModel() {
                 validateAndProceed()
             }
             SignUpAction.OnVerifyClick -> {
-                // TODO: Implement verification logic
+                verifyCode()
             }
             SignUpAction.OnBackClick -> {
                 _state.update { it.copy(signUpStep = SignUpStep.FORM) }
@@ -73,6 +80,39 @@ class SignUpViewModel : ViewModel() {
             SignUpAction.OnSignInClick -> {
                 _events.trySend(SignUpEvent.NavigateToSignIn)
             }
+        }
+    }
+
+    private fun signUp() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            authRepository.signUp(_state.value.email, _state.value.password)
+                .onSuccess {
+                    _state.update { it.copy(isLoading = false, signUpStep = SignUpStep.VERIFICATION) }
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(isLoading = false) }
+                    val message = when(error) {
+                        AuthError.UserAlreadyExists -> UiText.DynamicString("User already exists")
+                        else -> UiText.DynamicString("An unknown error occurred")
+                    }
+                    _events.send(SignUpEvent.ShowError(message))
+                }
+        }
+    }
+
+    private fun verifyCode() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            authRepository.verifyCode(_state.value.email, _state.value.verificationCode)
+                .onSuccess {
+                    _state.update { it.copy(isLoading = false) }
+                    _events.send(SignUpEvent.SignUpSuccess)
+                }
+                .onFailure {
+                    _state.update { it.copy(isLoading = false) }
+                    _events.send(SignUpEvent.ShowError(UiText.DynamicString("Invalid verification code")))
+                }
         }
     }
 
@@ -109,7 +149,7 @@ class SignUpViewModel : ViewModel() {
                 )
             }
         } else {
-            _state.update { it.copy(signUpStep = SignUpStep.VERIFICATION) }
+            signUp()
         }
     }
 }

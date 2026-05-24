@@ -12,18 +12,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.cailights.data.auth.FakeAuthRepository
+import com.example.cailights.domain.auth.AuthRepository
+import com.example.cailights.ui.FeedRoot
 import com.example.cailights.ui.SignInRoot
 import com.example.cailights.ui.SignUpRoot
 import com.example.cailights.ui.SplashScreen
 import com.example.cailights.ui.theme.CailightsTheme
+import org.koin.android.ext.android.inject
 
 enum class Screen {
     SPLASH,
     SIGN_IN,
-    SIGN_UP
+    SIGN_UP,
+    HOME
 }
 
 class MainActivity : ComponentActivity() {
+    
+    private val authRepository: AuthRepository by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -37,14 +45,24 @@ class MainActivity : ComponentActivity() {
                 ) {
                     when (currentScreen) {
                         Screen.SPLASH -> SplashScreen(
-                            onTimeout = { currentScreen = Screen.SIGN_IN },
+                            onTimeout = { 
+                                val startScreen = if ((authRepository as FakeAuthRepository).isLoggedIn()) {
+                                    Screen.HOME
+                                } else {
+                                    Screen.SIGN_IN
+                                }
+                                currentScreen = startScreen 
+                            },
                         )
                         Screen.SIGN_IN -> SignInRoot(
                             onSignUpClick = { currentScreen = Screen.SIGN_UP },
+                            onSignInSuccess = { currentScreen = Screen.HOME }
                         )
                         Screen.SIGN_UP -> SignUpRoot(
                             onSignInClick = { currentScreen = Screen.SIGN_IN },
+                            onSignUpSuccess = { currentScreen = Screen.HOME }
                         )
+                        Screen.HOME -> FeedRoot()
                     }
                 }
             }
