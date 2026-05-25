@@ -1,6 +1,6 @@
 # Cailights
 
-Connecting candidates to recruiters through a modern, mobile-first experience.
+Helping tech professionals and students build an undeniable 'Proof of Work' history through daily habit tracking and sharing, so they can get noticed by employers without relying on a traditional resume.
 
 ## Features
 
