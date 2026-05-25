@@ -3,6 +3,7 @@ package com.example.cailights.data.feed
 import com.example.cailights.domain.feed.FeedRepository
 import com.example.cailights.domain.model.Post
 import com.example.cailights.domain.model.Role
+import com.example.cailights.domain.model.Tag
 import com.example.cailights.domain.model.User
 import com.example.cailights.ui.Result
 import kotlinx.coroutines.delay
@@ -26,7 +27,7 @@ class FakeFeedRepository : FeedRepository {
             createdAt = ZonedDateTime.now().minusDays(1),
             updatedAt = ZonedDateTime.now().minusDays(1),
             author = fakeUsers[0],
-            tags = emptyList(),
+            tags = listOf(Tag("1", "android"), Tag("2", "jetback_compose")),
             attachments = emptyList()
         ),
         Post(
@@ -38,7 +39,7 @@ class FakeFeedRepository : FeedRepository {
             createdAt = ZonedDateTime.now().minusHours(5),
             updatedAt = ZonedDateTime.now().minusHours(5),
             author = fakeUsers[0],
-            tags = emptyList(),
+            tags = listOf(Tag("1", "android"), Tag("3", "kotlin")),
             attachments = emptyList()
         ),
         Post(
@@ -50,7 +51,7 @@ class FakeFeedRepository : FeedRepository {
             createdAt = ZonedDateTime.now().minusDays(2),
             updatedAt = ZonedDateTime.now().minusDays(2),
             author = fakeUsers[1],
-            tags = emptyList(),
+            tags = listOf(Tag("4", "design")),
             attachments = emptyList()
         ),
         Post(
@@ -62,7 +63,7 @@ class FakeFeedRepository : FeedRepository {
             createdAt = ZonedDateTime.now().minusHours(2),
             updatedAt = ZonedDateTime.now().minusHours(2),
             author = fakeUsers[1],
-            tags = emptyList(),
+            tags = listOf(Tag("4", "design")),
             attachments = emptyList()
         ),
         Post(
@@ -74,7 +75,7 @@ class FakeFeedRepository : FeedRepository {
             createdAt = ZonedDateTime.now().minusDays(3),
             updatedAt = ZonedDateTime.now().minusDays(3),
             author = fakeUsers[2],
-            tags = emptyList(),
+            tags = listOf(Tag("3", "kotlin"), Tag("5", "backend")),
             attachments = emptyList()
         ),
         Post(
@@ -86,7 +87,7 @@ class FakeFeedRepository : FeedRepository {
             createdAt = ZonedDateTime.now().minusMinutes(30),
             updatedAt = ZonedDateTime.now().minusMinutes(30),
             author = fakeUsers[2],
-            tags = emptyList(),
+            tags = listOf(Tag("5", "backend"), Tag("6", "microservice")),
             attachments = emptyList()
         )
     )
