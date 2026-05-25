@@ -1,14 +1,15 @@
 package com.example.cailights.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -16,25 +17,35 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.cailights.R
+import com.example.cailights.domain.model.Attachment
 import com.example.cailights.domain.model.Post
+import com.example.cailights.domain.model.PostType
 import com.example.cailights.ui.theme.CailightsTheme
 import org.koin.androidx.compose.koinViewModel
-import java.time.format.DateTimeFormatter
+import java.time.Duration
+import java.time.ZonedDateTime
 
 @Composable
 fun FeedRoot(
+    onNavigateToMessages: () -> Unit,
     viewModel: FeedViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     
     FeedScreen(
         stateProvider = { state },
-        onAction = viewModel::onAction
+        onAction = viewModel::onAction,
+        onMessagesClick = onNavigateToMessages
     )
 }
 
@@ -42,12 +53,23 @@ fun FeedRoot(
 @Composable
 fun FeedScreen(
     stateProvider: () -> FeedState,
-    onAction: (FeedAction) -> Unit
+    onAction: (FeedAction) -> Unit,
+    onMessagesClick: () -> Unit
 ) {
     val state = stateProvider()
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Feed", fontWeight = FontWeight.Bold) })
+            TopAppBar(
+                title = { Text("Feed", fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = onMessagesClick) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = "Messages"
+                        )
+                    }
+                }
+            )
         }
     ) { padding ->
         val pullToRefreshState = rememberPullToRefreshState()
@@ -70,10 +92,17 @@ fun FeedScreen(
                         Text("No posts available")
                     }
                 } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
                         items(state.filteredPosts, key = { it.id }) { post ->
                             PostCard(post = post)
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color.LightGray)
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
                         }
                     }
                 }
@@ -89,18 +118,27 @@ fun FilterBar(
     onTagSelected: (String) -> Unit
 ) {
     LazyRow(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(availableTags) { tag ->
             val isSelected = tag == selectedTag
-            Text(
-                text = tag,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.clickable { onTagSelected(tag) }
+            FilterChip(
+                selected = isSelected,
+                onClick = { onTagSelected(tag) },
+                label = { Text(tag) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = isSelected,
+                    borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                )
             )
         }
     }
@@ -108,106 +146,173 @@ fun FilterBar(
 
 @Composable
 fun PostCard(post: Post) {
+    val isHighlight = post.type == PostType.HIGHLIGHT
+    
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
+            .then(
+                if (isHighlight) {
+                    Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                } else Modifier
+            )
     ) {
-        // Title
-        Text(
-            text = post.title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Author and Info
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = post.author.username,
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray
-            )
-            Text(
-                text = " / ${post.createdAt.format(DateTimeFormatter.ofPattern("d 'days ago'"))}",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray
-            )
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                post.tags.forEach { tag ->
+        // Author Row
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(4.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "#${tag.name} ",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.Gray
+                        text = post.author.username,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
                     )
+                    if (post.isVerified) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Verified User",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    if (isHighlight) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Highlight",
+                            modifier = Modifier.size(14.dp),
+                            tint = Color(0xFFFBC02D) // Gold color
+                        )
+                    }
                 }
-                if (post.isVerified) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Verified User",
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                Text(
+                    text = formatRelativeTime(post.createdAt),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Content Row
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = post.content,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f).padding(end = 8.dp),
-                maxLines = 3
-            )
-            
-            // Placeholder for Image (as seen in design)
-            Surface(
-                modifier = Modifier.size(100.dp, 60.dp),
-                color = Color.Black,
-                shape = MaterialTheme.shapes.small
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                   // In a real app, use Coil here
-                }
+        // Title
+        Text(
+            text = post.title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Content
+        Text(
+            text = post.content,
+            style = MaterialTheme.typography.bodyMedium,
+            fontStyle = if (isHighlight) FontStyle.Italic else FontStyle.Normal,
+            color = if (isHighlight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Attachments
+        if (post.attachments.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            post.attachments.forEach { attachment ->
+                AttachmentPreview(attachment)
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Actions
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "Upvote",
-                modifier = Modifier.size(24.dp),
-                tint = Color.Gray
-            )
-            Text(
-                text = "12",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                modifier = Modifier.padding(start = 4.dp, end = 16.dp)
-            )
-            Icon(
-                imageVector = Icons.Default.BookmarkBorder,
-                contentDescription = "Bookmark",
-                modifier = Modifier.size(24.dp),
-                tint = Color.Gray
+        // Tags Row
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            post.tags.forEach { tag ->
+                Text(
+                    text = "#${tag.name}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AttachmentPreview(attachment: Attachment) {
+    when (attachment) {
+        is Attachment.Photo -> {
+            androidx.compose.foundation.Image(
+                painter = painterResource(id = R.drawable.cailights_splash_icon), // Placeholder
+                contentDescription = "Attached Photo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.LightGray)
             )
         }
+        is Attachment.Link -> {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { /* Open link */ },
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Link,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = attachment.url,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        else -> Unit
+    }
+}
+
+private fun formatRelativeTime(timestamp: ZonedDateTime): String {
+    val now = ZonedDateTime.now()
+    val duration = Duration.between(timestamp, now)
+    return when {
+        duration.toDays() > 365 -> "${duration.toDays() / 365} years ago"
+        duration.toDays() > 30 -> "${duration.toDays() / 30} months ago"
+        duration.toDays() > 0 -> "${duration.toDays()} days ago"
+        duration.toHours() > 0 -> "${duration.toHours()} hours ago"
+        else -> "${duration.toMinutes()} mins ago"
     }
 }
 
@@ -217,7 +322,8 @@ private fun FeedScreenPreview() {
     CailightsTheme {
         FeedScreen(
             stateProvider = { FeedState() },
-            onAction = {}
+            onAction = {},
+            onMessagesClick = {}
         )
     }
 }

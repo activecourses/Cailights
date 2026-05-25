@@ -6,6 +6,7 @@ data class Post(
     val id: String,
     val title: String,
     val content: String,
+    val type: PostType = PostType.NORMAL,
     val isVerified: Boolean,
     val isPublic: Boolean,
     val createdAt: ZonedDateTime,
@@ -14,6 +15,11 @@ data class Post(
     val tags: List<Tag>,
     val attachments: List<Attachment>
 )
+
+enum class PostType {
+    NORMAL,
+    HIGHLIGHT
+}
 
 data class Tag(
     val id: String,

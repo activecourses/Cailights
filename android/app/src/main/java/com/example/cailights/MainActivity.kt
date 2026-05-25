@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import com.example.cailights.data.auth.FakeAuthRepository
 import com.example.cailights.domain.auth.AuthRepository
 import com.example.cailights.ui.FeedRoot
+import com.example.cailights.ui.MessagesRoot
 import com.example.cailights.ui.SignInRoot
 import com.example.cailights.ui.SignUpRoot
 import com.example.cailights.ui.SplashScreen
@@ -25,7 +26,8 @@ enum class Screen {
     SPLASH,
     SIGN_IN,
     SIGN_UP,
-    HOME
+    HOME,
+    MESSAGES
 }
 
 class MainActivity : ComponentActivity() {
@@ -62,7 +64,12 @@ class MainActivity : ComponentActivity() {
                             onSignInClick = { currentScreen = Screen.SIGN_IN },
                             onSignUpSuccess = { currentScreen = Screen.HOME }
                         )
-                        Screen.HOME -> FeedRoot()
+                        Screen.HOME -> FeedRoot(
+                            onNavigateToMessages = { currentScreen = Screen.MESSAGES }
+                        )
+                        Screen.MESSAGES -> MessagesRoot(
+                            onBackClick = { currentScreen = Screen.HOME }
+                        )
                     }
                 }
             }
