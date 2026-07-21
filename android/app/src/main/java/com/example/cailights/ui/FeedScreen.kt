@@ -1,5 +1,7 @@
 package com.example.cailights.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,12 +15,16 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -57,7 +63,26 @@ fun FeedScreen(
     onMessagesClick: () -> Unit
 ) {
     val state = stateProvider()
+    
+    var isFilterBarVisible by remember { mutableStateOf(true) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // If we are scrolling down (available.y < 0), hide the bar
+                if (available.y < -1) {
+                    isFilterBarVisible = false
+                }
+                // If we are scrolling up (available.y > 0), show the bar
+                if (available.y > 1) {
+                    isFilterBarVisible = true
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     Scaffold(
+        modifier = Modifier.nestedScroll(nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text("Feed", fontWeight = FontWeight.Bold) },
@@ -75,11 +100,17 @@ fun FeedScreen(
         val pullToRefreshState = rememberPullToRefreshState()
         
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            FilterBar(
-                availableTags = state.availableTags,
-                selectedTag = state.selectedTag,
-                onTagSelected = { onAction(FeedAction.OnTagSelected(it)) }
-            )
+            AnimatedVisibility(
+                visible = isFilterBarVisible,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                FilterBar(
+                    availableTags = state.availableTags,
+                    selectedTag = state.selectedTag,
+                    onTagSelected = { onAction(FeedAction.OnTagSelected(it)) }
+                )
+            }
 
             PullToRefreshBox(
                 isRefreshing = state.isLoading,
@@ -126,18 +157,28 @@ fun FilterBar(
     ) {
         items(availableTags) { tag ->
             val isSelected = tag == selectedTag
-            FilterChip(
+            val scale by animateFloatAsState(
+                targetValue = if (isSelected) 1.05f else 1f,
+                label = "chip_scale"
+            )
+
+            ElevatedFilterChip(
                 selected = isSelected,
                 onClick = { onTagSelected(tag) },
-                label = { Text(tag) },
-                colors = FilterChipDefaults.filterChipColors(
+                label = { 
+                    Text(
+                        text = tag,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    ) 
+                },
+                modifier = Modifier.scale(scale),
+                colors = FilterChipDefaults.elevatedFilterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = isSelected,
-                    borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                elevation = FilterChipDefaults.elevatedFilterChipElevation(
+                    elevation = 2.dp,
+                    pressedElevation = 4.dp
                 )
             )
         }
@@ -321,7 +362,12 @@ private fun formatRelativeTime(timestamp: ZonedDateTime): String {
 private fun FeedScreenPreview() {
     CailightsTheme {
         FeedScreen(
-            stateProvider = { FeedState() },
+            stateProvider = { 
+                FeedState(
+                    availableTags = listOf("#", "android", "kotlin", "design"),
+                    selectedTag = "android"
+                ) 
+            },
             onAction = {},
             onMessagesClick = {}
         )
